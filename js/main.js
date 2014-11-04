@@ -13,12 +13,21 @@ query.run(function(error, featureCollection, response){
 });
 
 
-var MyViewModel =  {
+var MyViewModel = {
+	self: this,
 	name: ko.observable("Lucas"),
 	parkCount: ko.observable(),
 	computeParks: function(input) {
+		console.log(this.parkCount(input));
 		return this.parkCount(input);
-	}
+	},
+
+	allowMax: ko.computed(function() {
+		console.log("in the model:");
+		console.log(self);
+		//console.log(parkCount());
+		return this.parkCount > 300;
+	})
 };
 
 var map = L.map('map').setView([45.528, -122.680], 15);
@@ -29,7 +38,7 @@ var parks = new L.esri.FeatureLayer("http://services.arcgis.com/rOo16HdIMeOBI4Mb
 	}
 }).addTo(map);
 var popupTemplate = "<h3>{NAME}</h3>{ACRES} Acres<br><small>Property ID: {PROPERTYID}<small>";
-console.log(map);
+//console.log(map);
 
 map.on("dragend", function(e) {
     updateParks();
@@ -48,6 +57,8 @@ var updateParks = function() {
 	spatialQuery.run(function(error, featureCollection, response){
 		parksCurrent = featureCollection.features.length;
 		MyViewModel.computeParks(parksCurrent);
+		console.log(MyViewModel.allowMax());
+		MyViewModel.allowMax();
 	});
 }
 

@@ -30,15 +30,53 @@ var MyViewModel = {
 	})
 };
 
+
+
 var map = L.map('map').setView([45.528, -122.680], 15);
 L.esri.basemapLayer("Gray").addTo(map);
 var parks = new L.esri.FeatureLayer("http://services.arcgis.com/rOo16HdIMeOBI4Mb/arcgis/rest/services/Portland_Parks/FeatureServer/0", {
+	onEachFeature: onEachFeature,
 	style: function () {
 	  return { color: "#70ca49", weight: 2 };
 	}
+	
 }).addTo(map);
 var popupTemplate = "<h3>{NAME}</h3>{ACRES} Acres<br><small>Property ID: {PROPERTYID}<small>";
 //console.log(map);
+
+var highlightStyle = {
+    color: '#2262CC', 
+    weight: 3,
+    opacity: 0.6,
+    fillOpacity: 0.65,
+    fillColor: '#2262CC'
+};
+var defaultStyle = {
+	color: "#70ca49", 
+	weight: 2
+}
+console.log(parks);
+
+var onEachFeature = function(feature, layer) {
+	console.log("mouseover!");
+        layer.on({
+            mouseover: highlightFeature
+            //mouseout: resetHighlight,
+            //click: zoomToFeature,
+            //pointToLayer: pointToLayer
+        });
+    };
+function highlightFeature(e) {
+	console.log("Dafds");
+	parks.on("mouseover", function (e) {
+	    // Change the style to the highlighted version
+	    this.setStyle(highlightStyle);
+	});
+	// parks.on("mouseout", function (e) {
+	//     // Change the style to the highlighted version
+	//     this.setStyle(defaultStyle);
+	// });
+};
 
 map.on("dragend", function(e) {
     updateParks();
@@ -70,3 +108,7 @@ ko.applyBindings(MyViewModel);
 
 
 
+
+     
+
+    

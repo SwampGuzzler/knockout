@@ -9,6 +9,9 @@ var parksCurrent = 3;
 query.run(function(error, featureCollection, response) {
     parksCurrent = featureCollection.features.length;
     MyViewModel.computeParks(parksCurrent);
+    for (var i = 0; i < response.features.length; i++) {
+        MyViewModel.parkList.push(' ' + response.features[i].attributes.NAME);
+    }
 });
 
 
@@ -26,7 +29,26 @@ var MyViewModel = {
             MyViewModel.over300(false);
         }
         return this.parkCount(input);
-    }
+    },
+    updateParks: function() {
+        var bounding = map.getBounds();
+        var sW = bounding._southWest;
+        var nE = bounding._northEast;
+        var viewBounds = L.latLngBounds(sW, nE);
+        var spatialQuery = L.esri.Tasks.query('http://services.arcgis.com/rOo16HdIMeOBI4Mb/arcgis/rest/services/Portland_Parks/FeatureServer/0');
+        spatialQuery.within(viewBounds);
+
+        spatialQuery.run(function(error, featureCollection, response) {
+
+            parksCurrent = featureCollection.features.length;
+            MyViewModel.computeParks(parksCurrent);
+            MyViewModel.parkList.removeAll();
+            for (var i = 0; i < response.features.length; i++) {
+                MyViewModel.parkList.push(' ' + response.features[i].attributes.NAME);
+            }
+        });
+    },
+    parkList: ko.observableArray()
 
 };
 
@@ -49,51 +71,42 @@ var highlightStyle = {
     color: '#2262CC',
     weight: 3,
     opacity: 0.6,
-    fillOpacity: 0.65,
-    fillColor: '#2262CC'
+    fillOpacity: 0.65
+
 };
 var defaultStyle = {
     color: "#70ca49",
-    weight: 2
-}
+    weight: 2,
 
-var oldId;
-
-parks.on('mouseover', function(e) {
-    parks.resetStyle(oldId);
-    oldId = e.layer.feature.id;
-    e.layer.bringToFront();
-    parks.setFeatureStyle(e.layer.feature.id, {
-        color: '#9D78D2',
-        weight: 3,
-        opacity: 1
-    });
-});
-
-map.on("dragend", function(e) {
-    updateParks();
-});
-
-map.on("zoomend", function(e) {
-    updateParks();
-});
-
-var updateParks = function() {
-    var bounding = map.getBounds();
-    var sW = bounding._southWest;
-    var nE = bounding._northEast;
-    var viewBounds = L.latLngBounds(sW, nE);
-    var spatialQuery = L.esri.Tasks.query('http://services.arcgis.com/rOo16HdIMeOBI4Mb/arcgis/rest/services/Portland_Parks/FeatureServer/0');
-    spatialQuery.within(viewBounds);
-
-    spatialQuery.run(function(error, featureCollection, response) {
-        parksCurrent = featureCollection.features.length;
-        MyViewModel.computeParks(parksCurrent);
-    });
 }
 
 parks.bindPopup(function(feature) {
     return L.Util.template(popupTemplate, feature.properties)
 });
+
+var oldId;
+parks.on('mouseover', function(e) {
+    parks.resetStyle(oldId);
+    oldId = e.layer.feature.id;
+    e.layer.bringToFront();
+    parks.setFeatureStyle(e.layer.feature.id, highlightStyle);
+});
+parks.on('mouseout', function(e) {
+    //debugger;
+    parks.setFeatureStyle(e.layer.feature.id, defaultStyle);
+    //parks.resetStyle(oldId);
+    // oldId = e.layer.feature.id;
+    // e.layer.bringToFront();
+    // parks.setFeatureStyle(e.layer.feature.id, highlightStyle);
+});
+
+map.on("dragend", function(e) {
+    MyViewModel.updateParks();
+});
+
+map.on("zoomend", function(e) {
+    MyViewModel.updateParks();
+});
+
 
 ko.applyBindings(MyViewModel);
